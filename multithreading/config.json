@@ -11,20 +11,6 @@
     "ParserService": {
       "enabled": true,
       "thread": 20
-    },
-    "ReportingService": {
-      "enabled": true,
-      "thread": 1
-    },
-    "DataAggregatorService": {
-      "enabled": true
-    },
-    "NotificationService": {
-      "enabled": true,
-      "thread": 0
-    },
-    "LegacyService": {
-      "enabled": false
     }
   }
 }
