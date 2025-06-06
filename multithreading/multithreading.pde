@@ -89,59 +89,6 @@ void setup() {
     }
   }
 
-  // ReportingService
-  if (servicesConfig.hasKey("ReportingService")) {
-    JSONObject serviceCfg = servicesConfig.getJSONObject("ReportingService");
-    if (serviceCfg.getBoolean("enabled", false)) {
-      ReportingService reportingService = new ReportingService(bus); // Assuming constructor
-      int preferredThread = serviceCfg.getInt("thread", -1);
-      scheduler.addService(reportingService, preferredThread);
-      println("ReportingService caricato. Abilitato: true. Preferenza Thread: " + (preferredThread == -1 ? "Nessuna" : preferredThread) + "\n");
-    } else {
-      println("ReportingService NON caricato. Abilitato: false.\n");
-    }
-  }
-
-  // DataAggregatorService
-  if (servicesConfig.hasKey("DataAggregatorService")) {
-    JSONObject serviceCfg = servicesConfig.getJSONObject("DataAggregatorService");
-    if (serviceCfg.getBoolean("enabled", false)) {
-      DataAggregatorService dataAggregatorService = new DataAggregatorService(bus); // Assuming constructor
-      int preferredThread = serviceCfg.getInt("thread", -1);
-      scheduler.addService(dataAggregatorService, preferredThread);
-      println("DataAggregatorService caricato. Abilitato: true. Preferenza Thread: " + (preferredThread == -1 ? "Nessuna" : preferredThread) + "\n");
-    } else {
-      println("DataAggregatorService NON caricato. Abilitato: false.\n");
-    }
-  }
-
-  // NotificationService
-  if (servicesConfig.hasKey("NotificationService")) {
-    JSONObject serviceCfg = servicesConfig.getJSONObject("NotificationService");
-    if (serviceCfg.getBoolean("enabled", false)) {
-      NotificationService notificationService = new NotificationService(bus); // Assuming constructor
-      int preferredThread = serviceCfg.getInt("thread", -1);
-      scheduler.addService(notificationService, preferredThread);
-      println("NotificationService caricato. Abilitato: true. Preferenza Thread: " + (preferredThread == -1 ? "Nessuna" : preferredThread) + "\n");
-    } else {
-      println("NotificationService NON caricato. Abilitato: false.\n");
-    }
-  }
-
-  // LegacyService (example, remains disabled as per config)
-  if (servicesConfig.hasKey("LegacyService")) {
-    JSONObject serviceCfg = servicesConfig.getJSONObject("LegacyService");
-    if (serviceCfg.getBoolean("enabled", false)) {
-      // LegacyService legacyService = new LegacyService(bus); // Assuming constructor
-      // int preferredThread = serviceCfg.getInt("thread", -1);
-      // scheduler.addService(legacyService, preferredThread);
-      // println("LegacyService caricato. Abilitato: true. Preferenza Thread: " + (preferredThread == -1 ? "Nessuna" : preferredThread));
-    } else {
-      // Add a print statement for services that are configured but not enabled
-      println("LegacyService NON caricato. Abilitato: false.\n");
-    }
-  }
-
   scheduler.startAll();
 }
 
