@@ -1,16 +1,13 @@
 {
-  "_comment1": "debugMode serve ad aprire il debug monitor",
   "debugMode": true,
-
-  "_comment2": "massimo di thread utilizzabili, se il valore non esiste vengono impostati il massimo di thread disponibili",
   "maxThreads": 4,
-
   "services": {
-    "_comment3": "è consigliabile indicare sempre il thread voluto",
-
     "ParserService": {
       "enabled": true,
-      "thread": 20
+      "thread": 0
+    },
+    "LegacyService": {
+      "enabled": false
     }
   }
 }

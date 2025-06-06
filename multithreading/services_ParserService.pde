@@ -1,10 +1,14 @@
 class ParserService extends BaseService {
-  // Elaborazione dati in ingresso
-  
   DataBus bus;
 
   ParserService(DataBus bus) {
     this.bus = bus;
+    /*
+    // Intentionally throw an error to test constructor exception handling
+    if (true) { 
+      throw new RuntimeException("Test error triggered in ParserService constructor for dynamic loading test.");
+    }*/
+    
   }
 
   void setup() {

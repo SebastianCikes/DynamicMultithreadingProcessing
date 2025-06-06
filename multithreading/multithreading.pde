@@ -1,4 +1,6 @@
-import java.awt.*; //<>//
+import java.awt.*;
+import java.lang.reflect.Constructor;
+import java.util.Set;
 
 ParserService parser;
 ServiceScheduler scheduler;
@@ -8,6 +10,7 @@ Runtime runtime = Runtime.getRuntime();
 
 int refreshRate = 60;
 boolean isMaximized = false;
+
 Frame frame;
 
 void settings() {
@@ -15,47 +18,28 @@ void settings() {
 }
 
 void setup() {
-  surface.setResizable(true);  // Permetti il ridimensionamento
+  setupDummyReferences();
+
+  surface.setResizable(true);
   // Ottieni il frame in modo sicuro
   Component comp = (Component) surface.getNative();
   while (comp != null && !(comp instanceof Frame)) {
     comp = comp.getParent();
   }
-
   if (comp != null) {
     frame = (Frame) comp;
   } else {
     println("Frame non trovato.");
   }
 
-  /*
-  // Imposta il refresh rate in base allo schermo, se non lo riconosce imposta 60 FPS
-   GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-   GraphicsDevice[] gs = ge.getScreenDevices();
-   for (int i = 0; i < gs.length; i++) {
-   DisplayMode dm = gs[i].getDisplayMode();
-   refreshRate = dm.getRefreshRate();
-   if (refreshRate == DisplayMode.REFRESH_RATE_UNKNOWN) {
-   refreshRate = 60;
-   }
-   }
-   */
-
   frameRate(refreshRate);
-
   println("Avvio sistema...\n");
 
   int numThreads = runtime.availableProcessors();
   println("Numero di thread disponibili: " + numThreads);
 
-  // Crea un bus di comunicazione per i thread
-  // In realtà è solo una hash map
   bus = new DataBus();
-
-  // Carica la configurazione base del programma
   JSONObject config = loadJSONObject("config.json");
-
-  // Imposta il numero massimo di thread da utilizzare
   int maxThreads = config.getInt("maxThreads", 2);
   if (maxThreads <= 0 || maxThreads > numThreads) {
     maxThreads = numThreads;
@@ -63,37 +47,81 @@ void setup() {
   println("Numero di thread massimi utilizzabili: " + maxThreads);
   println();
 
-  // Crea uno scheduler
-  // In realtà abbina i servizi ad un thread
-  scheduler = new ServiceScheduler(maxThreads); // Assign to global scheduler
-  
-  // Più canvas assieme (windowDebug)
+  scheduler = new ServiceScheduler(maxThreads);
+
   if (config.getBoolean("debugMode")) {
     DebugWindow second = new DebugWindow(scheduler);
   }
-  
-  // Servizi da attivare
-  println("Caricamento servizi...\n");
-  JSONObject servicesConfig = config.getJSONObject("services");
 
-  // ParserService
-  if (servicesConfig.hasKey("ParserService")) {
-    JSONObject serviceCfg = servicesConfig.getJSONObject("ParserService");
-    if (serviceCfg.getBoolean("enabled", false)) {
-      parser = new ParserService(bus); // 'parser' variable is already declared globally
-      int preferredThread = serviceCfg.getInt("thread", -1); // -1 indicates no preference
-      scheduler.addService(parser, preferredThread);
-      println("ParserService caricato. Abilitato: true. Preferenza Thread: " + (preferredThread == -1 ? "Nessuna" : preferredThread) + "\n");
-    } else {
-      println("ParserService NON caricato. Abilitato: false.\n");
-    }
-  }
+  println("Inizio caricamento dinamico servizi...\n");
+  loadDynamicServices(config);
+  println("Fine caricamento dinamico servizi.\n");
 
   scheduler.startAll();
 }
 
+void setupDummyReferences() {
+  // Questi riferimenti forzano la compilazione senza eseguire nulla
+  if (false) {
+    new ParserService(null);
+  }
+}
+
+void loadDynamicServices(JSONObject config) {
+  JSONObject servicesConfig = config.getJSONObject("services");
+  if (servicesConfig != null) {
+    Set<String> keys = servicesConfig.keys();
+    for (String serviceName : keys) {
+      JSONObject serviceCfg = servicesConfig.getJSONObject(serviceName);
+      boolean isEnabled = serviceCfg.getBoolean("enabled", false);
+      println("Configurazione per servizio: " + serviceName + " - Abilitato: " + isEnabled);
+
+      if (isEnabled) {
+        BaseService serviceInstance = createServiceInstance(serviceName, bus);
+        if (serviceInstance != null) {
+          int preferredThread = serviceCfg.getInt("thread", -1); // -1 = nessuna preferenza
+          scheduler.addService(serviceInstance, preferredThread);
+          println(serviceName + " caricato dinamicamente. Thread: " + (preferredThread == -1 ? "Nessuno" : preferredThread) + "\n");
+
+          if (serviceName.equals("ParserService")) {
+            parser = (ParserService) serviceInstance;
+            println("ParserService assegnato alla variabile globale.\n");
+          }
+        } else {
+          println("ERRORE: Impossibile creare istanza di " + serviceName + "\n");
+        }
+      } else {
+        println(serviceName + " NON caricato (disabilitato nel config).\n");
+      }
+    }
+  }
+}
+
+BaseService createServiceInstance(String serviceName, DataBus bus) {
+  // Prova prima la reflection (per compatibilità futura)
+  try {
+    Class<?> serviceClass = Class.forName(serviceName);
+    Constructor<?> constructor = serviceClass.getDeclaredConstructor(DataBus.class);
+    return (BaseService) constructor.newInstance(bus);
+  }
+  catch (Exception e) {
+    // Reflection fallita, usa factory manuale
+  }
+
+  // Factory manuale come fallback affidabile
+  return createServiceManually(serviceName, bus);
+}
+
+BaseService createServiceManually(String serviceName, DataBus bus) {
+  switch (serviceName) {
+    case "ParserService":
+      return new ParserService(bus);
+    default:
+      println("ERRORE: Servizio sconosciuto: " + serviceName);
+    return null;
+  }
+}
+
 void draw() {
-  
-  // Da qui in poi grafica
-  
+  // Qui puoi aggiungere logica grafica se serve
 }
