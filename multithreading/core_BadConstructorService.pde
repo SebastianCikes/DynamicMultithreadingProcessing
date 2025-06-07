@@ -3,6 +3,7 @@ class BadConstructorService extends BaseService {
   // to test NoSuchMethodException handling.
   public BadConstructorService() {
     // Default constructor
+    super(1000);
   }
 
   void setup() {

@@ -63,7 +63,8 @@ void setup() {
 void setupDummyReferences() {
   // Questi riferimenti forzano la compilazione senza eseguire nulla
   if (false) {
-    new ParserService(null);
+    new ParserService(null, 10); // Updated for new constructor
+    new TestService(null, 10); // Add dummy reference for TestService
   }
 }
 
@@ -77,7 +78,8 @@ void loadDynamicServices(JSONObject config) {
       println("Configurazione per servizio: " + serviceName + " - Abilitato: " + isEnabled);
 
       if (isEnabled) {
-        BaseService serviceInstance = createServiceInstance(serviceName, bus);
+        int loopDelay = serviceCfg.getInt("loopDelay", 10); // Read loopDelay, default to 10
+        BaseService serviceInstance = createServiceInstance(serviceName, bus, loopDelay); // Pass loopDelay
         if (serviceInstance != null) {
           int preferredThread = serviceCfg.getInt("thread", -1); // -1 = nessuna preferenza
           scheduler.addService(serviceInstance, preferredThread);
@@ -97,25 +99,29 @@ void loadDynamicServices(JSONObject config) {
   }
 }
 
-BaseService createServiceInstance(String serviceName, DataBus bus) {
+BaseService createServiceInstance(String serviceName, DataBus bus, int loopDelay) { // Added loopDelay parameter
   // Prova prima la reflection (per compatibilità futura)
   try {
     Class<?> serviceClass = Class.forName(serviceName);
-    Constructor<?> constructor = serviceClass.getDeclaredConstructor(DataBus.class);
-    return (BaseService) constructor.newInstance(bus);
+    // Look for constructor with DataBus and int (for loopDelay)
+    Constructor<?> constructor = serviceClass.getDeclaredConstructor(DataBus.class, int.class);
+    return (BaseService) constructor.newInstance(bus, loopDelay); // Pass loopDelay
   }
   catch (Exception e) {
     // Reflection fallita, usa factory manuale
+     println("Reflection failed for " + serviceName + ", attempting manual creation. Error: " + e.getMessage());
   }
 
   // Factory manuale come fallback affidabile
-  return createServiceManually(serviceName, bus);
+  return createServiceManually(serviceName, bus, loopDelay); // Pass loopDelay
 }
 
-BaseService createServiceManually(String serviceName, DataBus bus) {
+BaseService createServiceManually(String serviceName, DataBus bus, int loopDelay) { // Added loopDelay parameter
   switch (serviceName) {
     case "ParserService":
-      return new ParserService(bus);
+      return new ParserService(bus, loopDelay); // Pass loopDelay
+    case "TestService": // Add TestService case
+      return new TestService(bus, loopDelay); // Pass loopDelay
     default:
       println("ERRORE: Servizio sconosciuto: " + serviceName);
     return null;

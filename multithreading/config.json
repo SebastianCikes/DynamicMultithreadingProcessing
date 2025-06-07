@@ -4,10 +4,16 @@
   "services": {
     "ParserService": {
       "enabled": true,
-      "thread": 0
+      "thread": 0,
+      "loopDelay": 10
     },
     "LegacyService": {
       "enabled": false
+    },
+    "TestService": {
+      "enabled": true,
+      "thread": 1,
+      "loopDelay": 500
     }
   }
 }
