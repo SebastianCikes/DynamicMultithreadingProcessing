@@ -1,23 +1,43 @@
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+// import java.util.concurrent.ConcurrentLinkedQueue; // No longer used
+import java.util.concurrent.ArrayBlockingQueue;
 
 class MessageQueue {
-  private final Queue<BaseMessage> queue = new ConcurrentLinkedQueue<BaseMessage>();
+  private static final int DEFAULT_CAPACITY = 256; // Default capacity for the bounded queue
+  private final Queue<BaseMessage> queue; // Type is Queue, implementation is ArrayBlockingQueue
 
   /**
-   * Adds a message to the end of the queue.
-   * This operation is thread-safe.
-   * @param message The message to enqueue.
+   * Constructs a new MessageQueue with default capacity.
    */
-  public void enqueue(BaseMessage message) {
-    if (message == null) {
-      // Optional: Add a log or throw an IllegalArgumentException if null messages are not allowed.
-      // For now, ConcurrentLinkedQueue allows null elements if not specified otherwise,
-      // but it's generally good practice to disallow them in message queues.
-      // However, the problem description doesn't specify, so we'll rely on ConcurrentLinkedQueue's behavior.
-      // println("Warning: Enqueuing a null message."); // Example logging
+  public MessageQueue() {
+    this.queue = new ArrayBlockingQueue<BaseMessage>(DEFAULT_CAPACITY);
+  }
+
+  /**
+   * Constructs a new MessageQueue with specified capacity.
+   * @param capacity The maximum capacity of the queue.
+   */
+  public MessageQueue(int capacity) {
+    if (capacity <= 0) {
+      throw new IllegalArgumentException("Queue capacity must be positive.");
     }
-    queue.offer(message); // offer is generally preferred to add for capacity-constrained queues, but for CLQ, add works too.
+    this.queue = new ArrayBlockingQueue<BaseMessage>(capacity);
+  }
+
+  /**
+   * Adds a message to the end of the queue if space is available.
+   * This operation is thread-safe. ArrayBlockingQueue handles synchronization.
+   * @param message The message to enqueue. Cannot be null for ArrayBlockingQueue.
+   * @return true if the message was added, false if the queue is full or message is null.
+   */
+  public boolean enqueue(BaseMessage message) {
+    if (message == null) {
+      // ArrayBlockingQueue does not permit null elements.
+      println("MessageQueue: Attempted to enqueue a null message. Aborted.");
+      return false; 
+    }
+    // queue.offer(message) is non-blocking and returns false if full.
+    return queue.offer(message); 
   }
 
   /**

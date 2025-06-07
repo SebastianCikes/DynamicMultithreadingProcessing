@@ -169,9 +169,14 @@ class ServiceScheduler {
 
     BaseService targetService = getService(targetServiceName);
     if (targetService != null) {
-      targetService.inputQueue.enqueue(message);
-      //println("ServiceScheduler: Message " + message.messageType + " sent to " + targetServiceName); // Can be too verbose
-      return true;
+      boolean enqueued = targetService.inputQueue.enqueue(message);
+      if (enqueued) {
+        //println("ServiceScheduler: Message " + message.messageType + " sent to " + targetServiceName); // Can be too verbose
+        return true;
+      } else {
+        println("WARNING: Message queue full for service: " + targetServiceName + ". Message of type " + message.messageType + " was not enqueued.");
+        return false;
+      }
     } else {
       println("ServiceScheduler: Failed to send message " + message.messageType + " to " + targetServiceName + ". Service not found.");
       return false;

@@ -22,8 +22,17 @@ abstract class BaseService implements Runnable {
 
   // Loop method now dequeues and processes messages
   void loop() {
-    BaseMessage message = inputQueue.dequeue();
-    if (message != null) {
+    BaseMessage message;
+    // Process all messages currently in the queue before delaying.
+    while ((message = inputQueue.dequeue()) != null) {
+      if (!running) { // Check running state before each message processing
+        // If service was stopped, messages currently in queue (after this one) will be processed on next scheduler cycle if service is restarted.
+        // Or, they might be lost if the service is not restarted.
+        // For now, just break the processing loop for this iteration.
+        // Re-enqueuing 'message' could be an option: inputQueue.enqueue(message);
+        println("Service " + getClass().getSimpleName() + " stopping during message processing batch, " + (inputQueue.size() +1) + " messages were in flight (current one incl.).");
+        break; 
+      }
       processMessage(message);
     }
   }
@@ -31,9 +40,11 @@ abstract class BaseService implements Runnable {
   public void run() {
     setup();
     while (running) {
-      loop(); // Polls queue and processes one message if available
-      delay(loopDelay); // Use configurable loopDelay
+      loop(); // Processes all available messages in the inputQueue
+      delay(loopDelay); // Uses Processing's delay function
     }
+    // Final log when the service's run loop actually exits.
+    println(getClass().getSimpleName() + " has finished its run loop.");
   }
 
   public void stop() {
