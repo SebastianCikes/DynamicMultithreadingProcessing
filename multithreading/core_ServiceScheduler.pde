@@ -1,7 +1,11 @@
+import java.util.HashMap; // Already used, but good to ensure
+import java.util.Map;     // For declaring allServicesByName as Map
+
 class ServiceScheduler {
   // Di fatto non è uno scheduler ma imposta i servizi
   // a determinati thread
   
+  private final Map<String, BaseService> allServicesByName = new HashMap<String, BaseService>();
   HashMap<Long, String> logs = new HashMap<Long, String>();
   ArrayList<ServiceThread> threads;
   int maxThreads;
@@ -52,6 +56,7 @@ class ServiceScheduler {
 
     if (target != null) {
       target.addService(s);
+      allServicesByName.put(s.getClass().getSimpleName(), s); // Store service by class name
       totalServicesAdded++;
       println("Service " + s.getClass().getSimpleName() + " assigned via " + assignmentMethod + " to " + target.getName() + " (ID: " + target.getId() + ")");
 
@@ -134,6 +139,42 @@ class ServiceScheduler {
                            " services: " + reusableStringBuilder.toString();
         logs.put(t.getId(), logMessage);
       }
+    }
+  }
+
+  /**
+   * Retrieves a service instance by its class name.
+   * @param serviceName The simple class name of the service.
+   * @return The service instance, or null if not found.
+   */
+  public BaseService getService(String serviceName) {
+    return allServicesByName.get(serviceName);
+  }
+
+  /**
+   * Sends a message to a target service's input queue.
+   * @param targetServiceName The simple class name of the target service.
+   * @param message The message to send.
+   * @return true if the message was successfully enqueued, false otherwise.
+   */
+  public boolean sendMessageToService(String targetServiceName, BaseMessage message) {
+    if (message == null) {
+      println("ServiceScheduler: Attempted to send a null message. Aborted.");
+      return false;
+    }
+    if (targetServiceName == null || targetServiceName.isEmpty()) {
+      println("ServiceScheduler: Target service name is null or empty for message type " + message.messageType + ". Aborted.");
+      return false;
+    }
+
+    BaseService targetService = getService(targetServiceName);
+    if (targetService != null) {
+      targetService.inputQueue.enqueue(message);
+      //println("ServiceScheduler: Message " + message.messageType + " sent to " + targetServiceName); // Can be too verbose
+      return true;
+    } else {
+      println("ServiceScheduler: Failed to send message " + message.messageType + " to " + targetServiceName + ". Service not found.");
+      return false;
     }
   }
 }
