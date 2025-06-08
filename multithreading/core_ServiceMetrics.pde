@@ -8,6 +8,9 @@ class ServiceMetrics {
   long minLoopExecutionTimeNanos;
   long maxLoopExecutionTimeNanos;
   long errorCount;
+  // Tracks the number of times incrementErrorCount() has been called consecutively
+  // without an intervening call to recordLoopTime() (which resets it).
+  int consecutiveErrorCount;
 
   private String serviceName; // For identification in logs or UI
 
@@ -27,6 +30,7 @@ class ServiceMetrics {
    * @param durationNanos The duration of the loop execution in nanoseconds.
    */
   public synchronized void recordLoopTime(long durationNanos) {
+    this.consecutiveErrorCount = 0; // Reset on successful loop execution
     loopExecutionCount++;
     totalLoopExecutionTimeNanos += durationNanos;
     if (durationNanos < minLoopExecutionTimeNanos) {
@@ -42,6 +46,7 @@ class ServiceMetrics {
    */
   public synchronized void incrementErrorCount() {
     errorCount++;
+    this.consecutiveErrorCount++; // Increment consecutive errors
   }
 
   /**
@@ -75,6 +80,7 @@ class ServiceMetrics {
     minLoopExecutionTimeNanos = Long.MAX_VALUE;
     maxLoopExecutionTimeNanos = 0; // Or Long.MIN_VALUE, but 0 is fine if we only record positive durations
     errorCount = 0;
+    this.consecutiveErrorCount = 0; // Reset consecutive errors
   }
 
   // Getters
@@ -97,6 +103,15 @@ class ServiceMetrics {
     return errorCount;
   }
 
+  /**
+   * Gets the current count of consecutive errors.
+   * This count is reset to 0 upon a successful loop execution.
+   * @return The number of consecutive errors.
+   */
+  public synchronized int getConsecutiveErrorCount() {
+    return consecutiveErrorCount;
+  }
+
   @Override
     public synchronized String toString() {
     return "Metrics for " + serviceName + ": " +
@@ -104,6 +119,7 @@ class ServiceMetrics {
       ", AvgTime(ms)=" + String.format("%.4f", getAverageLoopTimeMillis()) +
       ", MinTime(ms)=" + String.format("%.4f", (minLoopExecutionTimeNanos == Long.MAX_VALUE ? 0 : minLoopExecutionTimeNanos / 1_000_000.0)) +
       ", MaxTime(ms)=" + String.format("%.4f", (maxLoopExecutionTimeNanos / 1_000_000.0)) +
-      ", Errors=" + errorCount;
+      ", Errors=" + errorCount +
+      ", ConsecutiveErrors=" + consecutiveErrorCount;
   }
 }

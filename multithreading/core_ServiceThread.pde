@@ -11,7 +11,8 @@ import java.util.Collections;
  * In each tick, it checks assigned services to see if they are due to run based on their
  * individual `loopDelay` requests.
  * It calls `setup()` once for each service, then repeatedly calls `loop()` on due services,
- * collecting performance and error metrics.
+ * collecting performance and error metrics. It also includes a resilience feature to
+ * automatically stop services that encounter too many consecutive errors.
  */
 class ServiceThread extends Thread {
   private volatile boolean running = true;
@@ -22,6 +23,13 @@ class ServiceThread extends Thread {
   // A smaller threadLoopDelay allows for more granular adherence to individual service loopDelays,
   // but increases polling overhead.
   private int threadLoopDelay = 50;
+
+  /**
+   * Defines the threshold for automatically stopping a service if its `loop()` method
+   * throws an exception for this many consecutive execution attempts.
+   * Default is 3. Can be configured via {@link #setMaxConsecutiveErrorsThreshold(int)}.
+   */
+  private int maxConsecutiveErrorsThreshold = 3;
 
   // Map to store ServiceMetrics for each BaseService instance.
   private final Map<BaseService, ServiceMetrics> serviceMetricsMap = new HashMap<BaseService, ServiceMetrics>();
@@ -140,8 +148,20 @@ class ServiceThread extends Thread {
 
             if (metrics != null) {
               metrics.incrementErrorCount();
+              // Auto-stop logic based on consecutive errors
+              if (metrics.getConsecutiveErrorCount() >= this.maxConsecutiveErrorsThreshold) {
+                System.err.println(getName() + ": Service " + service.getClass().getSimpleName() +
+                  " has reached the maximum consecutive error threshold of " + this.maxConsecutiveErrorsThreshold +
+                  ". Stopping the service automatically.");
+                service.stop(); // Signal the service to stop. It will be cleaned up by ServiceScheduler later.
+                // No need to reset metrics.consecutiveErrorCount here, as the service is stopped.
+                // If it's re-added, it gets a new ServiceMetrics object.
+                // ServiceMetrics.recordLoopTime() (on a subsequent successful run, if any) would reset it.
+              }
             }
-            // Optional: service.stop(); // if a single error should stop the service.
+            // The decision to stop a service on any single error can be configured per service
+            // by having its loop() method catch exceptions and call this.stop() itself.
+            // This ServiceThread auto-stop is for runaway consecutive errors.
           }
         }
       }
@@ -257,6 +277,27 @@ class ServiceThread extends Thread {
       println(getName() + ": Thread loop delay set to " + delayMs + "ms.");
     } else {
       println(getName() + ": Invalid thread loop delay: " + delayMs + "ms. Keeping current: " + this.threadLoopDelay + "ms.");
+    }
+  }
+
+  /**
+   * Gets the configured maximum consecutive error threshold.
+   * @return The threshold count.
+   */
+  public int getMaxConsecutiveErrorsThreshold() {
+    return this.maxConsecutiveErrorsThreshold;
+  }
+
+  /**
+   * Sets the maximum consecutive error threshold for automatically stopping services.
+   * @param threshold The number of consecutive errors before a service is stopped. Must be > 0.
+   */
+  public void setMaxConsecutiveErrorsThreshold(int threshold) {
+    if (threshold > 0) {
+      this.maxConsecutiveErrorsThreshold = threshold;
+      println(getName() + ": Max consecutive errors threshold set to " + threshold);
+    } else {
+      println(getName() + ": Invalid max consecutive errors threshold: " + threshold + ". Must be > 0. Keeping current: " + this.maxConsecutiveErrorsThreshold);
     }
   }
 }
