@@ -4,9 +4,9 @@ class BadConstructorService extends BaseService {
   // to test NoSuchMethodException handling.
   public BadConstructorService() {
     // Call super constructor with null for scheduler and a default loopDelay.
-    // This makes it compile, but it won't be found by reflection 
+    // This makes it compile, but it won't be found by reflection
     // if reflection expects a ServiceScheduler instance.
-    super(null, 1000); 
+    super(null, 1000);
   }
 
   void setup() {
@@ -20,7 +20,7 @@ class BadConstructorService extends BaseService {
 
   // Required by BaseService to be concrete
   @Override
-  void processMessage(BaseMessage message) {
+    void processMessage(BaseMessage message) {
     // This service isn't expected to do much.
     // Log if it ever receives a message.
     if (message != null) {

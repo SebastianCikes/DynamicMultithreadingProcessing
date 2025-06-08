@@ -1,6 +1,6 @@
 class DataBus {
   // Hash map per comunicazione tra thread
-  
+
   HashMap<String, String> data = new HashMap<String, String>();
 
   synchronized void put(String key, String value) {

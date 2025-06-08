@@ -34,10 +34,10 @@ class MessageQueue {
     if (message == null) {
       // ArrayBlockingQueue does not permit null elements.
       println("MessageQueue: Attempted to enqueue a null message. Aborted.");
-      return false; 
+      return false;
     }
     // queue.offer(message) is non-blocking and returns false if full.
-    return queue.offer(message); 
+    return queue.offer(message);
   }
 
   /**

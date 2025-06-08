@@ -75,7 +75,7 @@ void setupDummyReferences() {
   // Questi riferimenti forzano la compilazione senza eseguire nulla
   if (false) {
     // Pass null for scheduler in dummy references
-    new ParserService(null, 10); 
+    new ParserService(null, 10);
     new TestService(null, null, 10);
     new LoggingService(null, 10); // Add dummy reference for LoggingService
   }
@@ -93,11 +93,11 @@ void loadDynamicServices(JSONObject config) {
       if (isEnabled) {
         int loopDelay = serviceCfg.getInt("loopDelay", 10); // Read loopDelay, default to 10
         // Pass scheduler to createServiceInstance
-        BaseService serviceInstance = createServiceInstance(serviceName, bus, scheduler, loopDelay); 
+        BaseService serviceInstance = createServiceInstance(serviceName, bus, scheduler, loopDelay);
         if (serviceInstance != null) {
           int preferredThread = serviceCfg.getInt("thread", -1); // -1 = nessuna preferenza
           // scheduler.addService is already adding the service to its internal map
-          scheduler.addService(serviceInstance, preferredThread); 
+          scheduler.addService(serviceInstance, preferredThread);
           println(serviceName + " caricato dinamicamente. Thread: " + (preferredThread == -1 ? "Nessuno" : preferredThread) + "\n");
 
           if (serviceName.equals("ParserService")) {
@@ -123,13 +123,15 @@ BaseService createServiceInstance(String serviceName, DataBus bus, ServiceSchedu
       // Attempt to load as an inner class of the main sketch first
       serviceClass = Class.forName(sketchClassName + "$" + serviceName);
       println("INFO: Successfully loaded class " + serviceName + " as inner class: " + serviceClass.getName());
-    } catch (ClassNotFoundException e) {
+    }
+    catch (ClassNotFoundException e) {
       println("INFO: Could not load " + serviceName + " as an inner class (" + sketchClassName + "$" + serviceName + "), trying as top-level class. Details: " + e.getMessage());
       try {
         // Fallback: attempt to load as a top-level class
         serviceClass = Class.forName(serviceName);
         println("INFO: Successfully loaded class " + serviceName + " as top-level class: " + serviceClass.getName());
-      } catch (ClassNotFoundException e2) {
+      }
+      catch (ClassNotFoundException e2) {
         println("ERROR: ClassNotFoundException for " + serviceName + " (tried as inner and top-level). Details: " + e2.getMessage());
         e2.printStackTrace(); // Print stack trace for the final ClassNotFoundException
         // If class not found, cannot proceed with reflection. Directly use manual creation.
@@ -144,20 +146,22 @@ BaseService createServiceInstance(String serviceName, DataBus bus, ServiceSchedu
     Class<?> outerClassType = this.getClass(); // Class of the main sketch (e.g., multithreading)
 
     // This block attempts to instantiate assuming serviceClass might be a non-static inner class
-    try { 
+    try {
       // Try constructor with (Outer, DataBus, ServiceScheduler, int)
       constructor = serviceClass.getDeclaredConstructor(outerClassType, DataBus.class, ServiceScheduler.class, int.class);
       instance = (BaseService) constructor.newInstance(this, bus, scheduler, loopDelay); // 'this' is the first argument
       println("Service " + serviceName + " instantiated via reflection using (Outer, DataBus, ServiceScheduler, int) constructor.");
       return instance;
-    } catch (NoSuchMethodException nsme1) {
+    }
+    catch (NoSuchMethodException nsme1) {
       // If not found, try constructor with (Outer, ServiceScheduler, int)
       try {
         constructor = serviceClass.getDeclaredConstructor(outerClassType, ServiceScheduler.class, int.class);
         instance = (BaseService) constructor.newInstance(this, scheduler, loopDelay); // 'this' is the first argument
         println("Service " + serviceName + " instantiated via reflection using (Outer, ServiceScheduler, int) constructor.");
         return instance;
-      } catch (NoSuchMethodException nsme2) {
+      }
+      catch (NoSuchMethodException nsme2) {
         // These specific constructor forms for inner classes were not found.
         // This might be okay if the class is static or a top-level class,
         // in which case the original constructor search (without outerClassType) might be relevant.
@@ -168,29 +172,32 @@ BaseService createServiceInstance(String serviceName, DataBus bus, ServiceSchedu
         // Let's proceed to try non-inner class forms if these fail.
       }
     }
-    
+
     // Fallback to trying original constructor signatures (for static inner classes or top-level classes)
     // This part is kept from the previous version of the method.
-    try { 
+    try {
       // Try constructor with (DataBus, ServiceScheduler, int) - for static/top-level
       constructor = serviceClass.getDeclaredConstructor(DataBus.class, ServiceScheduler.class, int.class);
       instance = (BaseService) constructor.newInstance(bus, scheduler, loopDelay);
       println("Service " + serviceName + " instantiated via reflection using (DataBus, ServiceScheduler, int) constructor (likely static or top-level).");
       return instance;
-    } catch (NoSuchMethodException nsme3) {
+    }
+    catch (NoSuchMethodException nsme3) {
       // If not found, try constructor with (ServiceScheduler, int) - for static/top-level
       try {
         constructor = serviceClass.getDeclaredConstructor(ServiceScheduler.class, int.class);
         instance = (BaseService) constructor.newInstance(scheduler, loopDelay);
         println("Service " + serviceName + " instantiated via reflection using (ServiceScheduler, int) constructor (likely static or top-level).");
         return instance;
-      } catch (NoSuchMethodException nsme4) {
+      }
+      catch (NoSuchMethodException nsme4) {
         println("ERROR: No suitable constructor found for " + serviceName + " via reflection. All attempts failed (inner, static, top-level forms).");
         // nsme4.printStackTrace(); // Log the final NoSuchMethodException if desired
         // Fall through to manual creation at the end of the method
       }
     }
-  } catch (Exception e) { // General catch-all for other reflection issues (e.g., InvocationTargetException, IllegalAccessException)
+  }
+  catch (Exception e) { // General catch-all for other reflection issues (e.g., InvocationTargetException, IllegalAccessException)
     // This catch handles exceptions from any of the reflection attempts above (inner class forms or static/top-level forms)
     println("ERROR: General exception during reflection for " + serviceName + " (after class loading, if successful): " + e.getMessage());
     e.printStackTrace();
@@ -211,8 +218,8 @@ BaseService createServiceManually(String serviceName, DataBus bus, ServiceSchedu
       return new TestService(bus, scheduler, loopDelay); // Pass scheduler
     case "LoggingService": // Add LoggingService case
       return new LoggingService(scheduler, loopDelay); // Pass scheduler
-    default:
-      println("ERRORE: Servizio sconosciuto: " + serviceName);
+  default:
+    println("ERRORE: Servizio sconosciuto: " + serviceName);
     return null;
   }
 }

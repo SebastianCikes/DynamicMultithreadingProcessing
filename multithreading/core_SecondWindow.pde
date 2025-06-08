@@ -9,7 +9,7 @@ class DebugWindow extends PApplet {
   }
 
   public void settings() {
-    size(1000, 600);
+    size(800, 1000);
   }
 
   public void setup() {
@@ -27,7 +27,7 @@ class DebugWindow extends PApplet {
     // Aggiorna e mostra il monitor
     currentLogs = scheduler.getLogs();
     monitor.update();
-    monitor.displayDetailed(currentLogs);
+    monitor.displayDetailed(this.scheduler, currentLogs); // Pass the scheduler instance
   }
 
   public void keyPressed() {

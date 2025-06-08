@@ -15,12 +15,12 @@ class TestService extends BaseService {
   // This loop method will be overridden by BaseService.loop().
   // To make TestService do something, processMessage should be implemented.
   void loop() {
-    println("TestService custom loop (will not be called if processMessage is not implemented and BaseService.loop is used)...");
+    println("TestService custom loop");
   }
 
   // Required by BaseService, otherwise it won't compile as BaseService.processMessage is abstract
   @Override
-  void processMessage(BaseMessage message) {
+    void processMessage(BaseMessage message) {
     // For now, just acknowledge a message if received.
     if (message != null) {
       println("TestService received message: " + message.messageType);

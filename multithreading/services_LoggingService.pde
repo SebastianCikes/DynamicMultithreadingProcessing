@@ -5,27 +5,27 @@ class LoggingService extends BaseService {
   }
 
   @Override
-  void setup() {
+    void setup() {
     println("LoggingService Started. Ready to receive messages on thread " + Thread.currentThread().getName() + " (ID: " + Thread.currentThread().getId() + ")");
   }
 
   @Override
-  void processMessage(BaseMessage message) {
+    void processMessage(BaseMessage message) {
     if (message == null) {
       println("LoggingService received a null message.");
       return;
     }
     // Basic logging format
     String logEntry = "Log (" + Thread.currentThread().getName() + "): " +
-                      "Type='" + message.messageType + 
-                      "', TS=" + message.timestamp + 
-                      ", Content: " + messageToString(message);
+      "Type='" + message.messageType +
+      "', TS=" + message.timestamp +
+      ", Content: " + messageToString(message);
     println(logEntry);
 
     // Example of how LoggingService could forward or react (not part of this subtask)
     // if (message instanceof RawDataMessage && ((RawDataMessage)message).payload.contains("CRITICAL")) {
     //   BaseMessage alert = new BaseMessage(); // Simplified, would be specific alert type
-    //   this.scheduler.sendMessageToService("AlertService", alert); 
+    //   this.scheduler.sendMessageToService("AlertService", alert);
     // }
   }
 

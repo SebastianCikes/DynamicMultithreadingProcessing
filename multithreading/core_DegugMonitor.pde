@@ -1,4 +1,4 @@
-class DebugMonitor { //<>// //<>//
+class DebugMonitor { //<>// //<>// //<>//
   // Monitor di debug programma
   // Memoria, thread, ...
 
@@ -99,10 +99,15 @@ class DebugMonitor { //<>// //<>//
     }
   }
 
-  // Display dettagliato con tutte le info
-  void displayDetailed(HashMap<Long, String> threadLogs) {
+  /**
+   * Displays detailed debugging information, including memory stats, thread logs,
+   * and service-specific performance metrics.
+   * @param scheduler The ServiceScheduler instance, used to fetch service metrics.
+   * @param threadLogs A map of thread logs to display.
+   */
+  void displayDetailed(ServiceScheduler scheduler, HashMap<Long, String> threadLogs) {
     showDetailed = true;
-    displayDetailedInfo(threadLogs);
+    displayDetailedInfo(scheduler, threadLogs); // Pass scheduler
     showDetailed = false;
   }
 
@@ -183,9 +188,86 @@ class DebugMonitor { //<>// //<>//
     canvas.strokeWeight(1);
   }
 
-  private void displayDetailedInfo(HashMap<Long, String> threadLogs) {
+  /**
+   * Displays performance and error metrics for each service.
+   * Fetches metrics from the ServiceScheduler and formats them for display.
+   * @param scheduler The ServiceScheduler instance to query for metrics.
+   * @param x The base X-coordinate for drawing the text.
+   * @param initialY The initial Y-coordinate to start drawing from.
+   * @return The Y-coordinate after drawing the metrics, for subsequent drawing operations.
+   */
+  private int displayServiceMetrics(ServiceScheduler scheduler, int x, int initialY) {
+    int y = initialY;
+    int lineHeight = 18; // Assuming same lineHeight as displayDetailedInfo, or make it a field
+
+    Map<String, ServiceMetrics> allMetrics = scheduler.getAllServiceMetrics();
+
+    if (allMetrics == null || allMetrics.isEmpty()) {
+      canvas.fill(200, 200, 255); // Light blue or similar for info message
+      textBuilder.setLength(0);
+      textBuilder.append("No service metrics available.");
+      canvas.text(textBuilder.toString(), x, y);
+      y += lineHeight;
+      return y;
+    }
+
+    y += lineHeight; // Space before the header
+    canvas.fill(200, 200, 255); // Different color for metrics section header
+    textBuilder.setLength(0);
+    textBuilder.append("SERVICE METRICS:");
+    canvas.text(textBuilder.toString(), x, y);
+    y += lineHeight;
+
+    canvas.fill(220, 220, 240); // Slightly different fill for metrics text
+
+    for (Map.Entry<String, ServiceMetrics> entry : allMetrics.entrySet()) {
+      String serviceName = entry.getKey();
+      ServiceMetrics metrics = entry.getValue();
+
+      textBuilder.setLength(0);
+      textBuilder.append(serviceName).append(":");
+      canvas.text(textBuilder.toString(), x, y);
+      y += lineHeight;
+
+      textBuilder.setLength(0);
+      textBuilder.append("  Loop Count: ").append(metrics.getLoopExecutionCount());
+      canvas.text(textBuilder.toString(), x + 10, y); // Indent details
+      y += lineHeight;
+
+      textBuilder.setLength(0);
+      textBuilder.append("  Avg Loop Time: ").append(String.format("%.3f ms", metrics.getAverageLoopTimeMillis()));
+      canvas.text(textBuilder.toString(), x + 10, y);
+      y += lineHeight;
+
+      textBuilder.setLength(0);
+      textBuilder.append("  Min Loop Time: ").append(String.format("%.3f ms", metrics.getMinLoopExecutionTimeNanos() / 1_000_000.0));
+      canvas.text(textBuilder.toString(), x + 10, y);
+      y += lineHeight;
+
+      textBuilder.setLength(0);
+      textBuilder.append("  Max Loop Time: ").append(String.format("%.3f ms", metrics.getMaxLoopExecutionTimeNanos() / 1_000_000.0));
+      canvas.text(textBuilder.toString(), x + 10, y);
+      y += lineHeight;
+
+      textBuilder.setLength(0);
+      textBuilder.append("  Error Count: ").append(metrics.getErrorCount());
+      canvas.text(textBuilder.toString(), x + 10, y);
+      y += lineHeight;
+
+      y += lineHeight / 2; // Small vertical space after metrics for each service
+    }
+    return y;
+  }
+
+  /**
+   * Central method for drawing all detailed debug information on the canvas.
+   * This includes memory usage, performance (FPS), thread logs, and service metrics.
+   * @param scheduler The ServiceScheduler instance, passed through to displayServiceMetrics.
+   * @param threadLogs A map of thread logs to display.
+   */
+  private void displayDetailedInfo(ServiceScheduler scheduler, HashMap<Long, String> threadLogs) {
     int x = canvas.width/2;
-    int y = 150;
+    int y = 20;
     int lineHeight = 18;
 
     canvas.fill(255, 255, 0);
@@ -235,6 +317,10 @@ class DebugMonitor { //<>// //<>//
       if (y > canvas.height - 50) break; // Non uscire dallo schermo
       canvas.text(logMessage, x, y);
     }
+
+    // Display Service Metrics
+    y += lineHeight; // Add some space before metrics
+    y = displayServiceMetrics(scheduler, x, y); // Call the new method and update y
 
     if (showGraph) {
       displayMemoryGraph();

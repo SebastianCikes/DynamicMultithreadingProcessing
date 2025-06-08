@@ -13,7 +13,7 @@ class ParserService extends BaseService {
 
   // processMessage is called by BaseService's loop
   @Override
-  void processMessage(BaseMessage message) {
+    void processMessage(BaseMessage message) {
     if (message instanceof RawDataMessage) {
       RawDataMessage rawMessage = (RawDataMessage) message;
       String rawPayload = rawMessage.payload;
@@ -27,7 +27,7 @@ class ParserService extends BaseService {
 
           // Create a ParsedDataMessage
           ParsedDataMessage psm = new ParsedDataMessage(parsedContent);
-          
+
           // Send this message to LoggingService
           if (this.scheduler != null) {
             boolean sent = this.scheduler.sendMessageToService("LoggingService", psm);
@@ -39,7 +39,6 @@ class ParserService extends BaseService {
           } else {
             println("ParserService: Scheduler not available, cannot send ParsedDataMessage.");
           }
-          
         } else {
           println("ParserService received RawDataMessage with malformed payload: " + rawPayload);
         }

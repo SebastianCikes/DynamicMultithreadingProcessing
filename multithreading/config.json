@@ -13,7 +13,7 @@
     "TestService": {
       "enabled": true,
       "thread": 1,
-      "loopDelay": 500
+      "loopDelay": 1000
     },
     "LoggingService": {
       "enabled": true,
