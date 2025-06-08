@@ -20,7 +20,7 @@ This project provides a foundational multithreading framework built with Process
 2.  **Clone the Repository:**
     ```bash
     # If you have git installed
-    git clone YOUR_REPOSITORY_URL_HERE
+    git clone https://github.com/SebastianCikes/DynamicMultithreadingProcessing
     ```
     Alternatively, download the source code as a ZIP file and extract it.
 3.  **Open in Processing:**
