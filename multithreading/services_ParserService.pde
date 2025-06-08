@@ -7,7 +7,7 @@ class ParserService extends BaseService {
   }
 
   void setup() {
-    // inizializzazione se necessaria
+    // initialization if necessary
     println("ParserService setup complete. Waiting for messages...");
   }
 

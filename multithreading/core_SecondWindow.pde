@@ -13,7 +13,7 @@ class DebugWindow extends PApplet {
   }
 
   public void setup() {
-    // Passa 'this' per riferirsi a questo canvas
+    // Pass 'this' to refer to this canvas
     monitor = new DebugMonitor(this);
     currentLogs = new HashMap<Long, String>();
   }
@@ -24,15 +24,15 @@ class DebugWindow extends PApplet {
     textAlign(CENTER, CENTER);
     textSize(20);
 
-    // Aggiorna e mostra il monitor
+    // Update and show the monitor
     currentLogs = scheduler.getLogs();
     monitor.update();
     monitor.displayDetailed(this.scheduler, currentLogs); // Pass the scheduler instance
   }
 
   public void keyPressed() {
-    if (key == 'g') monitor.toggleGraph();    // Mostra/nascondi grafico
-    if (key == 'c') monitor.forceGC();        // Forza garbage collection
-    if (key == 's') monitor.printStats();     // Stampa statistiche
+    if (key == 'g') monitor.toggleGraph();    // Show/hide graph
+    if (key == 'c') monitor.forceGC();        // Force garbage collection
+    if (key == 's') monitor.printStats();     // Print statistics
   }
 }

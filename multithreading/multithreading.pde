@@ -21,7 +21,7 @@ void setup() {
   setupDummyReferences();
 
   surface.setResizable(true);
-  // Ottieni il frame in modo sicuro
+  // Get the frame safely
   Component comp = (Component) surface.getNative();
   while (comp != null && !(comp instanceof Frame)) {
     comp = comp.getParent();
@@ -29,14 +29,14 @@ void setup() {
   if (comp != null) {
     frame = (Frame) comp;
   } else {
-    println("Frame non trovato.");
+    println("Frame not found.");
   }
 
   frameRate(refreshRate);
-  println("Avvio sistema...\n");
+  println("Starting system...\n");
 
   int numThreads = runtime.availableProcessors();
-  println("Numero di thread disponibili: " + numThreads);
+  println("Number of available threads: " + numThreads);
 
   bus = new DataBus();
   JSONObject config = loadJSONObject("config.json");
@@ -44,7 +44,7 @@ void setup() {
   if (maxThreads <= 0 || maxThreads > numThreads) {
     maxThreads = numThreads;
   }
-  println("Numero di thread massimi utilizzabili: " + maxThreads);
+  println("Maximum number of usable threads: " + maxThreads);
   println();
 
   scheduler = new ServiceScheduler(maxThreads);
@@ -53,9 +53,9 @@ void setup() {
     DebugWindow second = new DebugWindow(scheduler);
   }
 
-  println("Inizio caricamento dinamico servizi...\n");
+  println("Starting dynamic loading of services...\n");
   loadDynamicServices(config);
-  println("Fine caricamento dinamico servizi.\n");
+  println("End of dynamic loading of services.\n");
 
   scheduler.startAll();
 
@@ -72,7 +72,7 @@ void setup() {
 }
 
 void setupDummyReferences() {
-  // Questi riferimenti forzano la compilazione senza eseguire nulla
+  // These references force compilation without executing anything
   if (false) {
     // Pass null for scheduler in dummy references
     new ParserService(null, 10);
@@ -88,27 +88,27 @@ void loadDynamicServices(JSONObject config) {
     for (String serviceName : keys) {
       JSONObject serviceCfg = servicesConfig.getJSONObject(serviceName);
       boolean isEnabled = serviceCfg.getBoolean("enabled", false);
-      println("Configurazione per servizio: " + serviceName + " - Abilitato: " + isEnabled);
+      println("Configuration for service: " + serviceName + " - Enabled: " + isEnabled);
 
       if (isEnabled) {
         int loopDelay = serviceCfg.getInt("loopDelay", 10); // Read loopDelay, default to 10
         // Pass scheduler to createServiceInstance
         BaseService serviceInstance = createServiceInstance(serviceName, bus, scheduler, loopDelay);
         if (serviceInstance != null) {
-          int preferredThread = serviceCfg.getInt("thread", -1); // -1 = nessuna preferenza
+          int preferredThread = serviceCfg.getInt("thread", -1); // -1 = no preference
           // scheduler.addService is already adding the service to its internal map
           scheduler.addService(serviceInstance, preferredThread);
-          println(serviceName + " caricato dinamicamente. Thread: " + (preferredThread == -1 ? "Nessuno" : preferredThread) + "\n");
+          println(serviceName + " dynamically loaded. Thread: " + (preferredThread == -1 ? "None" : preferredThread) + "\n");
 
           if (serviceName.equals("ParserService")) {
             parser = (ParserService) serviceInstance;
-            println("ParserService assegnato alla variabile globale.\n");
+            println("ParserService assigned to the global variable.\n");
           }
         } else {
-          println("ERRORE: Impossibile creare istanza di " + serviceName + "\n");
+          println("ERROR: Unable to create instance of " + serviceName + "\n");
         }
       } else {
-        println(serviceName + " NON caricato (disabilitato nel config).\n");
+        println(serviceName + " NOT loaded (disabled in config).\n");
       }
     }
   }
@@ -219,11 +219,11 @@ BaseService createServiceManually(String serviceName, DataBus bus, ServiceSchedu
     case "LoggingService": // Add LoggingService case
       return new LoggingService(scheduler, loopDelay); // Pass scheduler
   default:
-    println("ERRORE: Servizio sconosciuto: " + serviceName);
+    println("ERROR: Unknown service: " + serviceName);
     return null;
   }
 }
 
 void draw() {
-  // Qui puoi aggiungere logica grafica se serve
+  // Here you can add graphic logic if needed
 }

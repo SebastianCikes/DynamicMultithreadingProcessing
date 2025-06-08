@@ -1,16 +1,16 @@
-class DebugMonitor { //<>// //<>// //<>//
-  // Monitor di debug programma
-  // Memoria, thread, ...
+class DebugMonitor { //<>// //<>// //<>// //<>//
+  // Program debug monitor
+  // Memory, threads, ...
 
-  // Costanti
+  // Constants
   private final long MB = 1024 * 1024;
   private Runtime runtime;
   private StringBuilder textBuilder;
 
-  // Riferimento al PApplet su cui disegnare
+  // Reference to the PApplet to draw on
   private PApplet canvas;
 
-  // Cache per performance
+  // Cache for performance
   private long lastUpdateFrame = -1;
   private long cachedTotalMB = 0;
   private long cachedUsedMB = 0;
@@ -18,17 +18,17 @@ class DebugMonitor { //<>// //<>// //<>//
   private long cachedMaxMB = 0;
   private int cachedFPS = 0;
 
-  // Monitoring memoria nel tempo
+  // Memory monitoring over time
   private ArrayList<Long> memoryHistory;
   private ArrayList<Integer> gcEvents;
   private long lastUsedMemory = 0;
   private int frameCounter = 0;
 
-  // Modalità display
+  // Display mode
   private boolean showGraph = true;
   private boolean showDetailed = false;
 
-  // Costruttore che accetta il canvas su cui disegnare
+  // Constructor that accepts the canvas to draw on
   DebugMonitor(PApplet targetCanvas) {
     this.canvas = targetCanvas;
     runtime = Runtime.getRuntime();
@@ -40,19 +40,19 @@ class DebugMonitor { //<>// //<>// //<>//
   void update() {
     frameCounter++;
 
-    // Aggiorna cache ogni 10 frame per performance
+    // Update cache every 10 frames for performance
     if (canvas.frameCount != lastUpdateFrame && canvas.frameCount % 10 == 0) {
       updateCache();
       lastUpdateFrame = canvas.frameCount;
     }
 
-    // Rileva eventi GC
+    // Detect GC events
     detectGarbageCollection();
 
-    // Mantieni storia memoria
-    if (frameCounter % 5 == 0) { // Ogni 5 frame per non sovraccaricare
+    // Maintain memory history
+    if (frameCounter % 5 == 0) { // Every 5 frames to avoid overload
       memoryHistory.add(cachedUsedMB * MB);
-      if (memoryHistory.size() > 200) { // Mantieni ultimi 200 punti
+      if (memoryHistory.size() > 200) { // Keep last 200 points
         memoryHistory.remove(0);
       }
     }
@@ -74,13 +74,13 @@ class DebugMonitor { //<>// //<>// //<>//
   private void detectGarbageCollection() {
     long currentUsed = cachedUsedMB * MB;
 
-    // Rileva GC se memoria scende drasticamente (>30%)
+    // Detect GC if memory drops drastically (>30%)
     if (lastUsedMemory > 0 && currentUsed < lastUsedMemory * 0.7) {
       gcEvents.add(frameCounter);
       println("GC Event #" + gcEvents.size() + " at frame " + frameCounter +
         " - Memory: " + (lastUsedMemory/MB) + "MB → " + (currentUsed/MB) + "MB");
 
-      // Mantieni solo ultimi 20 eventi GC
+      // Keep only last 20 GC events
       if (gcEvents.size() > 20) {
         gcEvents.remove(0);
       }
@@ -89,7 +89,7 @@ class DebugMonitor { //<>// //<>// //<>//
     lastUsedMemory = currentUsed;
   }
 
-  // Display standard
+  // Standard display
   void display(HashMap<Long, String> threadLogs) {
     displayMemoryInfo();
     displayThreadLogs(threadLogs);
@@ -129,7 +129,7 @@ class DebugMonitor { //<>// //<>// //<>//
     textBuilder.append("GC Events: ").append(gcEvents.size());
     canvas.text(textBuilder.toString(), x, baseY + 40);
 
-    // Indicatore di salute memoria
+    // Memory health indicator
     float memoryPercent = (float)cachedUsedMB / cachedMaxMB;
     canvas.fill(memoryPercent > 0.8 ? canvas.color(255, 0, 0) : memoryPercent > 0.6 ? canvas.color(255, 255, 0) : canvas.color(0, 255, 0));
     textBuilder.setLength(0);
@@ -158,11 +158,11 @@ class DebugMonitor { //<>// //<>// //<>//
     int graphW = 200;
     int graphH = 80;
 
-    // Background grafico
+    // Graphic background
     canvas.fill(0, 100);
     canvas.rect(graphX, graphY, graphW, graphH);
 
-    // Linea memoria
+    // Memory line
     canvas.stroke(0, 255, 0);
     canvas.strokeWeight(1);
     canvas.noFill();
@@ -175,7 +175,7 @@ class DebugMonitor { //<>// //<>// //<>//
     }
     canvas.endShape();
 
-    // Marker eventi GC
+    // GC event markers
     canvas.stroke(255, 0, 0);
     canvas.strokeWeight(2);
     for (Integer gcFrame : gcEvents) {
@@ -275,7 +275,7 @@ class DebugMonitor { //<>// //<>// //<>//
     textBuilder.append("= DEBUG MONITOR (Frame: ").append(canvas.frameCount).append(") =");
     canvas.text(textBuilder.toString(), x, y);
 
-    // Memoria dettagliata
+    // Detailed memory
     canvas.fill(255);
     y += lineHeight * 2;
     canvas.text("MEMORIA:", x, y);
@@ -314,7 +314,7 @@ class DebugMonitor { //<>// //<>// //<>//
     canvas.fill(255);
     for (String logMessage : threadLogs.values()) {
       y += lineHeight;
-      if (y > canvas.height - 50) break; // Non uscire dallo schermo
+      if (y > canvas.height - 50) break; // Don't go off screen
       canvas.text(logMessage, x, y);
     }
 
@@ -327,7 +327,7 @@ class DebugMonitor { //<>// //<>// //<>//
     }
   }
 
-  // Metodi di controllo
+  // Control methods
   void toggleGraph() {
     showGraph = !showGraph;
   }
@@ -335,7 +335,7 @@ class DebugMonitor { //<>// //<>// //<>//
     System.gc();
   }
 
-  // Statistiche
+  // Statistics
   void printStats() {
     println("=== Monitor Stats ===");
     println("Memoria: " + cachedUsedMB + "/" + cachedMaxMB + " MB");
