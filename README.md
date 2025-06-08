@@ -74,7 +74,7 @@ For detailed instructions on how to create and integrate new services into this 
 
 ## Citation
 
-If you use this software in your project, please consider citing it. (Details on how to cite can be added here if you have a preferred format or publication).
+If you use this software in your project, please consider citing it.
 
 ## License
 
