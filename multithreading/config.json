@@ -1,7 +1,6 @@
 {
   "debugMode": true,
   "maxThreads": 4,
-  "loggingFilePath": "log/application.log",
   "services": {
     "ParserService": {
       "enabled": true,
