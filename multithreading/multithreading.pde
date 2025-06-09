@@ -77,7 +77,7 @@ void setupDummyReferences() {
     // Pass null for scheduler in dummy references
     new ParserService(null, 10);
     new TestService(null, null, 10);
-    new LoggingService(null, 10); // Add dummy reference for LoggingService
+    new LoggingService(null, 10, "dummy_path.log"); // Add dummy reference for LoggingService
   }
 }
 
@@ -92,8 +92,9 @@ void loadDynamicServices(JSONObject config) {
 
       if (isEnabled) {
         int loopDelay = serviceCfg.getInt("loopDelay", 10); // Read loopDelay, default to 10
-        // Pass scheduler to createServiceInstance
-        BaseService serviceInstance = createServiceInstance(serviceName, bus, scheduler, loopDelay);
+        String loggingFilePath = config.getString("loggingFilePath", "app_logs/default_app.log"); // Read from global config
+        // Pass scheduler and loggingFilePath to createServiceInstance
+        BaseService serviceInstance = createServiceInstance(serviceName, bus, scheduler, loopDelay, loggingFilePath);
         if (serviceInstance != null) {
           int preferredThread = serviceCfg.getInt("thread", -1); // -1 = no preference
           // scheduler.addService is already adding the service to its internal map
@@ -114,8 +115,8 @@ void loadDynamicServices(JSONObject config) {
   }
 }
 
-// Updated signature to include scheduler
-BaseService createServiceInstance(String serviceName, DataBus bus, ServiceScheduler scheduler, int loopDelay) {
+// Updated signature to include scheduler and loggingFilePath
+BaseService createServiceInstance(String serviceName, DataBus bus, ServiceScheduler scheduler, int loopDelay, String loggingFilePath) {
   Class<?> serviceClass = null;
   try { // Outer try for overall reflection process, including class loading and instantiation
     String sketchClassName = getClass().getName(); // Get the main sketch's class name
@@ -136,7 +137,7 @@ BaseService createServiceInstance(String serviceName, DataBus bus, ServiceSchedu
         e2.printStackTrace(); // Print stack trace for the final ClassNotFoundException
         // If class not found, cannot proceed with reflection. Directly use manual creation.
         println("Attempting manual creation for " + serviceName + " (class not found via reflection).");
-        return createServiceManually(serviceName, bus, scheduler, loopDelay);
+        return createServiceManually(serviceName, bus, scheduler, loopDelay, loggingFilePath); // Pass loggingFilePath
       }
     }
 
@@ -146,6 +147,19 @@ BaseService createServiceInstance(String serviceName, DataBus bus, ServiceSchedu
     Class<?> outerClassType = this.getClass(); // Class of the main sketch (e.g., multithreading)
 
     // This block attempts to instantiate assuming serviceClass might be a non-static inner class
+    try {
+      // NEW: Try constructor for LoggingService (Outer, ServiceScheduler, int, String)
+      if (serviceName.equals("LoggingService")) {
+        constructor = serviceClass.getDeclaredConstructor(outerClassType, ServiceScheduler.class, int.class, String.class);
+        instance = (BaseService) constructor.newInstance(this, scheduler, loopDelay, loggingFilePath);
+        println("Service " + serviceName + " instantiated via reflection using (Outer, ServiceScheduler, int, String) constructor.");
+        return instance;
+      }
+    } catch (NoSuchMethodException nsmeSpecific) {
+        // This is fine, it just means it's not LoggingService with this specific new signature
+        // Fall through to other attempts.
+    }
+    
     try {
       // Try constructor with (Outer, DataBus, ServiceScheduler, int)
       constructor = serviceClass.getDeclaredConstructor(outerClassType, DataBus.class, ServiceScheduler.class, int.class);
@@ -162,19 +176,23 @@ BaseService createServiceInstance(String serviceName, DataBus bus, ServiceSchedu
         return instance;
       }
       catch (NoSuchMethodException nsme2) {
-        // These specific constructor forms for inner classes were not found.
-        // This might be okay if the class is static or a top-level class,
-        // in which case the original constructor search (without outerClassType) might be relevant.
-        // However, Processing typically makes .pde classes non-static inner classes.
-        // If these fail, it's a strong indication that manual creation or a different constructor signature is needed.
         println("INFO: Standard inner class constructor forms not found for " + serviceName + ". Tried (Outer,DataBus,SS,int) and (Outer,SS,int). Details: " + nsme2.getMessage());
-        // nsme2.printStackTrace(); // This can be very verbose if this is a common path for static/top-level classes.
-        // Let's proceed to try non-inner class forms if these fail.
       }
     }
 
     // Fallback to trying original constructor signatures (for static inner classes or top-level classes)
-    // This part is kept from the previous version of the method.
+    try {
+      // NEW: Try constructor for LoggingService (ServiceScheduler, int, String) - for static/top-level
+      if (serviceName.equals("LoggingService")) {
+          constructor = serviceClass.getDeclaredConstructor(ServiceScheduler.class, int.class, String.class);
+          instance = (BaseService) constructor.newInstance(scheduler, loopDelay, loggingFilePath);
+          println("Service " + serviceName + " instantiated via reflection using (ServiceScheduler, int, String) constructor (likely static or top-level).");
+          return instance;
+      }
+    } catch (NoSuchMethodException nsmeSpecificStatic) {
+        // Fine, fall through.
+    }
+
     try {
       // Try constructor with (DataBus, ServiceScheduler, int) - for static/top-level
       constructor = serviceClass.getDeclaredConstructor(DataBus.class, ServiceScheduler.class, int.class);
@@ -192,32 +210,28 @@ BaseService createServiceInstance(String serviceName, DataBus bus, ServiceSchedu
       }
       catch (NoSuchMethodException nsme4) {
         println("ERROR: No suitable constructor found for " + serviceName + " via reflection. All attempts failed (inner, static, top-level forms).");
-        // nsme4.printStackTrace(); // Log the final NoSuchMethodException if desired
-        // Fall through to manual creation at the end of the method
       }
     }
   }
-  catch (Exception e) { // General catch-all for other reflection issues (e.g., InvocationTargetException, IllegalAccessException)
-    // This catch handles exceptions from any of the reflection attempts above (inner class forms or static/top-level forms)
+  catch (Exception e) { // General catch-all for other reflection issues
     println("ERROR: General exception during reflection for " + serviceName + " (after class loading, if successful): " + e.getMessage());
     e.printStackTrace();
-    // Fall through to manual creation at the end of the method
   }
 
-  // Fallback to manual creation if constructor lookup failed OR a general reflection exception occurred after class loading
-  println("Attempting manual creation for " + serviceName + " (reflection for constructor failed or other general issue post-classloading).");
-  return createServiceManually(serviceName, bus, scheduler, loopDelay);
+  // Fallback to manual creation
+  println("Attempting manual creation for " + serviceName + " (reflection failed or other issue).");
+  return createServiceManually(serviceName, bus, scheduler, loopDelay, loggingFilePath); // Pass loggingFilePath
 }
 
-// Updated signature to include scheduler
-BaseService createServiceManually(String serviceName, DataBus bus, ServiceScheduler scheduler, int loopDelay) {
+// Updated signature to include scheduler and loggingFilePath
+BaseService createServiceManually(String serviceName, DataBus bus, ServiceScheduler scheduler, int loopDelay, String loggingFilePath) {
   switch (serviceName) {
     case "ParserService":
-      return new ParserService(scheduler, loopDelay); // Pass scheduler
+      return new ParserService(scheduler, loopDelay);
     case "TestService":
-      return new TestService(bus, scheduler, loopDelay); // Pass scheduler
-    case "LoggingService": // Add LoggingService case
-      return new LoggingService(scheduler, loopDelay); // Pass scheduler
+      return new TestService(bus, scheduler, loopDelay);
+    case "LoggingService":
+      return new LoggingService(scheduler, loopDelay, loggingFilePath); // Pass loggingFilePath
   default:
     println("ERROR: Unknown service: " + serviceName);
     return null;

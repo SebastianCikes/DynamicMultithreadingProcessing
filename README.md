@@ -36,6 +36,7 @@ The `config.json` file located in the `multithreading` directory (i.e., `multith
 
 *   `maxThreads`: Maximum number of threads the `ServiceScheduler` will use.
 *   `debugMode`: Set to `true` to enable the `DebugWindow`, `false` to disable.
+*   `loggingFilePath`: (Optional) Specifies the path for the application log file (e.g., `"logs/application.log"`). If not provided, a default path like `"logs/application_fallback.log"` will be used. The system will attempt to create parent directories if they don't exist. Example: `"loggingFilePath": "my_custom_logs/app.log"`.
 *   `services`: An object containing configurations for each service.
     *   `"ServiceName"`: The key should match the service class name.
         *   `enabled`: `true` or `false` to load or not load the service.
